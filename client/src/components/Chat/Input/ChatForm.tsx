@@ -1,4 +1,5 @@
 import { useRecoilState } from 'recoil';
+import { useEffect } from 'react';
 import type { ChangeEvent } from 'react';
 import { useChatContext } from '~/Providers';
 import { useRequiresKey } from '~/hooks';
@@ -8,6 +9,8 @@ import SendButton from './SendButton';
 import FileRow from './Files/FileRow';
 import Textarea from './Textarea';
 import store from '~/store';
+import { useSpeechToText, useSpeechToTextExternal } from '~/hooks';
+import { useGetStartupConfig } from 'librechat-data-provider/react-query';
 
 export default function ChatForm({ index = 0 }) {
   const [text, setText] = useRecoilState(store.textByIndex(index));
@@ -32,6 +35,29 @@ export default function ChatForm({ index = 0 }) {
   const { requiresKey } = useRequiresKey();
   const { endpoint: _endpoint, endpointType } = conversation ?? { endpoint: null };
   const endpoint = endpointType ?? _endpoint;
+  const { data: startupConfig } = useGetStartupConfig();
+  const useExternalSpeech = startupConfig?.textToSpeechExternal;
+
+  const {
+    isListening: speechIsListening,
+    isLoading: speechIsLoading,
+    text: speechText,
+  } = useSpeechToText();
+
+  const {
+    isListening: externalIsListening,
+    isLoading: externalIsLoading,
+    text: externalSpeechText,
+  } = useSpeechToTextExternal();
+
+  const isListening = useExternalSpeech ? externalIsListening : speechIsListening;
+  const isLoading = useExternalSpeech ? externalIsLoading : speechIsLoading;
+  const speechTextForm = useExternalSpeech ? externalSpeechText : speechText;
+  const finalText = speechText || externalSpeechText ? speechTextForm : text;
+
+  useEffect(() => {
+    return setText(finalText);
+  }, [finalText, setText]);
 
   return (
     <form
@@ -74,7 +100,12 @@ export default function ChatForm({ index = 0 }) {
               <StopButton stop={handleStopGenerating} setShowStopButton={setShowStopButton} />
             ) : (
               endpoint && (
-                <SendButton text={text} disabled={filesLoading || isSubmitting || requiresKey} />
+                <SendButton
+                  text={text}
+                  disabled={filesLoading || isSubmitting || requiresKey}
+                  isListening={isListening}
+                  isLoading={isLoading}
+                />
               )
             )}
           </div>

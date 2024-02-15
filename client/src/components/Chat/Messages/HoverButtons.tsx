@@ -1,8 +1,24 @@
 import { useState } from 'react';
+import { useRecoilState } from 'recoil';
 import type { TConversation, TMessage } from 'librechat-data-provider';
-import { Clipboard, CheckMark, EditIcon, RegenerateIcon, ContinueIcon } from '~/components/svg';
-import { useGenerationsByLatest, useLocalize } from '~/hooks';
+import {
+  Clipboard,
+  CheckMark,
+  EditIcon,
+  RegenerateIcon,
+  ContinueIcon,
+  VolumeIcon,
+  VolumeMuteIcon,
+} from '~/components/svg';
+import {
+  useGenerationsByLatest,
+  useLocalize,
+  useTextToSpeech,
+  useTextToSpeechExternal,
+} from '~/hooks';
 import { cn } from '~/utils';
+import store from '~/store';
+import { useGetStartupConfig } from 'librechat-data-provider/react-query';
 
 type THoverButtons = {
   isEditing: boolean;
@@ -31,6 +47,21 @@ export default function HoverButtons({
   const { endpoint: _endpoint, endpointType } = conversation ?? {};
   const endpoint = endpointType ?? _endpoint;
   const [isCopied, setIsCopied] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const { data: startupConfig } = useGetStartupConfig();
+  const useExternalTextToSpeech = startupConfig?.speechToTextExternal;
+
+  const { generateSpeechLocal: generateSpeechLocal, cancelSpeechLocal: cancelSpeechLocal } =
+    useTextToSpeech();
+
+  const { synthesizeSpeech: synthesizeSpeechExternal, cancelSpeech: cancelSpeechExternal } =
+    useTextToSpeechExternal();
+
+  const generateSpeech = useExternalTextToSpeech ? synthesizeSpeechExternal : generateSpeechLocal;
+  const cancelSpeech = useExternalTextToSpeech ? cancelSpeechExternal : cancelSpeechLocal;
+
+  const [TextToSpeech] = useRecoilState<boolean>(store.TextToSpeech);
+
   const { hideEditButton, regenerateEnabled, continueSupported } = useGenerationsByLatest({
     isEditing,
     isSubmitting,
@@ -51,8 +82,28 @@ export default function HoverButtons({
     enterEdit();
   };
 
+  const toggleSpeech = () => {
+    if (isSpeaking) {
+      cancelSpeech();
+      setIsSpeaking(false);
+    } else {
+      generateSpeech(message?.text ?? '', () => setIsSpeaking(false));
+    }
+    setIsSpeaking(!isSpeaking);
+  };
+
   return (
     <div className="visible mt-0 flex justify-center gap-1 self-end text-gray-400 lg:justify-start">
+      {TextToSpeech && (
+        <button
+          className="hover-button rounded-md p-1 pl-0 text-gray-400 hover:text-gray-950 dark:text-gray-400/70 dark:hover:text-gray-200 disabled:dark:hover:text-gray-400 md:group-hover:visible md:group-[.final-completion]:visible"
+          onClick={toggleSpeech}
+          type="button"
+          title={isSpeaking ? localize('com_ui_stop_speaking') : localize('com_ui_speak')}
+        >
+          {isSpeaking ? <VolumeMuteIcon /> : <VolumeIcon />}
+        </button>
+      )}
       <button
         className={cn(
           'hover-button rounded-md p-1 pl-0 text-gray-400 hover:text-gray-950 dark:text-gray-400/70 dark:hover:text-gray-200 disabled:dark:hover:text-gray-400 md:group-hover:visible md:group-[.final-completion]:visible',

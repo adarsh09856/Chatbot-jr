@@ -17,6 +17,10 @@ import type {
   TPreset,
   UploadAvatarOptions,
   AvatarUploadResponse,
+  SpeechToTextOptions,
+  SpeechToTextResponse,
+  TextToSpeechOptions,
+  TextToSpeechResponse,
   TConversation,
   Assistant,
   AssistantCreateParams,
@@ -287,6 +291,21 @@ export const useUploadAvatarMutation = (
   });
 };
 
+/* Speech to text */
+export const useSpeechToTextMutation = (
+  options?: SpeechToTextOptions,
+): UseMutationResult<
+  SpeechToTextResponse, // response data
+  unknown, // error
+  FormData, // request
+  unknown // context
+> => {
+  return useMutation([MutationKeys.speechToText], {
+    mutationFn: (variables: FormData) => dataService.speechToText(variables),
+    ...(options || {}),
+  });
+};
+
 /**
  * ASSISTANTS
  */
@@ -414,6 +433,21 @@ export const useUploadAssistantAvatarMutation = (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     mutationFn: ({ postCreation, ...variables }: AssistantAvatarVariables) =>
       dataService.uploadAssistantAvatar(variables),
+    ...(options || {}),
+  });
+};
+
+/* Text to speech */
+export const useTextToSpeechMutation = (
+  options?: TextToSpeechOptions,
+): UseMutationResult<
+  TextToSpeechResponse, // response data
+  unknown, // error
+  FormData, // request
+  unknown // context
+> => {
+  return useMutation([MutationKeys.textToSpeech], {
+    mutationFn: (variables: FormData) => dataService.textToSpeech(variables),
     ...(options || {}),
   });
 };

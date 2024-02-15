@@ -249,6 +249,16 @@ export const deleteFiles = async (
     data: { files, assistant_id },
   });
 
+export const speechToText = (data: FormData): Promise<f.SpeechToTextResponse> => {
+  return request.postMultiPart(endpoints.speechToText(), data);
+};
+
+export const textToSpeech = (data: FormData): Promise<f.TextToSpeechResponse> => {
+  return request.postMultiPart(endpoints.textToSpeech(), data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
 /* conversations */
 
 export const listConversations = (

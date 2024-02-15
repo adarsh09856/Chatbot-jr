@@ -6,7 +6,6 @@ import { EndpointMenu } from './EndpointMenu';
 import SubmitButton from './SubmitButton';
 import OptionsBar from './OptionsBar';
 import Footer from './Footer';
-
 import { useMessageHandler, ThemeContext } from '~/hooks';
 import { cn, getEndpointField } from '~/utils';
 import store from '~/store';
